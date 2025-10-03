@@ -66,10 +66,19 @@
 
   <div class="otp-container">
     <h2>Enter OTP</h2>
-    <form action="/admin/verify-otp" method="POST">
-      <input type="text" name="otp" placeholder="Enter your OTP" required>
-      <button type="submit">Verify</button>
+    <p>An OTP has been sent to your registered email/phone.</p>
+    
+    <!-- Form should POST to the same route with user_id -->
+    <form action="/users/otp/{{ user_id }}" method="POST">
+      <!-- Hidden field to pass user_id -->
+      <input type="hidden" name="user_id" value="{{ user_id }}">
+      
+      <input type="text" name="otp" placeholder="Enter your 8-digit OTP" 
+             maxlength="8" pattern="[0-9]{8}" required>
+      
+      <button type="submit">Verify OTP</button>
     </form>
+    
     <p>If you did not receive the OTP, <a href="#">resend</a></p>
   </div>
 

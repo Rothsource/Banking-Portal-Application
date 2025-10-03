@@ -1,17 +1,26 @@
 from app import create_app, db
-from app.controller.users import create_user
+from app.controller import user_login, verify_otp
 
 app = create_app()
 
-# 🔹 Enter app context
 with app.app_context():
-    # Now you can safely use User.query or db.session
-        user, error = create_user(
-        username="alice",
-        email="alice@example.com",
-        password="password123",
-        user_type="customer",  # ✅ allowed
-        digits="123456",
-        gov_id="GOV123"
+    user, error, role, get_otp = user_login(
+        '13224345656771',
+        'sr6024010023@camtech',
+        'roth123pro'
     )
-print(user, error)
+
+    if error:
+        print("❌ Error:", error)
+    else:
+        print("✅ Login success")
+        print("User ID:", user.id)
+        print("Role:", role)
+
+        if role != "customer":
+            otp_in_db = user.otp
+            print("Generated OTP in DB:", get_otp)
+
+            # simulate user typing OTP
+            # valid, err = verify_otp(user.id, otp_in_db)
+            # print("Verify OTP result:", valid, err)

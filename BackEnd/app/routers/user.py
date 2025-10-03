@@ -1,11 +1,6 @@
 # app/routers/user.py
-from flask import Blueprint, render_template, request, redirect, url_for
-from app.controller import create_user, user_login
-import random
-
-def generate_otp():
-    otp = random.randint(10000000, 99999999)
-    return otp
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from app.controller import create_user, user_login, verify_otp
 
 bp = Blueprint("user", __name__, template_folder="../../Fronend/templetes")
 
@@ -17,7 +12,7 @@ def register():
         password = request.form.get("password")
         digits = request.form.get("digits")
         gov_id = request.form.get("gov_id")
-        user_type = request.form.get("user_type")  # optional
+        user_type = request.form.get("user_type")
 
         user, error = create_user(username, email, password, user_type, digits, gov_id)
         if error:
@@ -34,7 +29,7 @@ def register_others():
         password = request.form.get("password")
         digits = request.form.get("digits")
         gov_id = request.form.get("gov_id")
-        user_type = request.form.get("user_type")  # optional
+        user_type = request.form.get("user_type")
 
         user, error = create_user(username, email, password, user_type, digits, gov_id)
         if error:
@@ -43,27 +38,35 @@ def register_others():
 
     return render_template("othersRegister.html")
 
-@bp.route("/otp", methods=["GET", "POST"])
-def otp():
+@bp.route("/otp/<int:user_id>", methods=["GET", "POST"]) 
+def otp(user_id):
     if request.method == "POST":
         entered_otp = request.form.get("otp")
-        # Here you would verify the OTP with the one stored/sent
-        # For simplicity, let's assume it's always correct
-        return "OTP verified successfully!"
-    return render_template("otp.html")
+        valid, error = verify_otp(user_id, entered_otp)
+        if not valid:
+            return f"Error: {error}"
+        
+        return "OTP verified successfully! You are now logged in."
+    
+    return render_template("otp.html", user_id=user_id)
 
 @bp.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
         gov_id = request.form.get("gov_id")
-        gmail = request.form.get("email")   
+        email = request.form.get("gmail")   
         password = request.form.get("password")
         
-        user, error,role = user_login(gov_id, gmail, password)
-        if role != "customer":
-            return redirect(url_for("user.otp"))
-        
+        # Fixed: unpack all 4 return values
+        user, error, role, otp = user_login(gov_id, email, password)
         if error:
             return f"Error: {error}"
+        
+        if role != "customer":
+            print(f"OTP for user {user.id}: {otp}")  
+            
+            return redirect(url_for("user.otp", user_id=user.id))
+        
         return "Login successful!"
+    
     return render_template("login.html")
